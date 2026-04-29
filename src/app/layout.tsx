@@ -4,6 +4,8 @@ import "./globals.css";
 import Navbar from "@/components/Navbar/Navbar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar/app-sidebar";
+import { SessionProvider } from "next-auth/react";
+import Provider from "@/components/provider/provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,22 +30,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <SidebarProvider>
-          <div className="flex h-screen w-full">
-            <AppSidebar />
-            <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-              <header className="flex items-center border-b px-4 h-16 gap-2">
-                <SidebarTrigger />
-                <div className="flex-1">
-                  <Navbar />
-                </div>
-              </header>
-              <div className="flex-1 overflow-y-auto p-6">
-                {children}
-              </div>
-            </main>
-          </div>
-        </SidebarProvider>
+        <Provider>
+
+          {children}
+        </Provider>
       </body>
     </html>
   );

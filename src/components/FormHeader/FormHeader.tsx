@@ -1,221 +1,186 @@
 "use client"
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Plus } from "lucide-react";
+import { Calendar as CalendarIcon, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { toast } from "sonner";
 
-export default function FormHeader() {
+interface Appointment {
+    _id: string;
+    startTime: string;
+    status: 'completed' | 'cancelled' | 'pending' | 'confirmed';
+    patient?: { displayName: string };
+    location?: { clinicName: string };
+    doctor?: { displayName: string };
+    price: number;
+}
+
+interface FormHeaderProps {
+    appointments: Appointment[];
+}
+
+const statusStyles: Record<string, string> = {
+    completed: "bg-[#E8F8F0] text-[#27AE60]",
+    cancelled: "bg-[#FEE2E2] text-[#EF4444]",
+    pending: "bg-[#FFF9E5] text-[#E2B93B]",
+    confirmed: "bg-[#EBF2FF] text-[#2B6CEE]",
+};
+
+const statusOptions = [
+    { value: "all", label: "All Status", dot: "bg-[#6C7688]" },
+    { value: "completed", label: "Completed", dot: "bg-[#27AE60]" },
+    { value: "confirmed", label: "Confirmed", dot: "bg-[#2B6CEE]" },
+    { value: "pending", label: "Pending", dot: "bg-[#E2B93B]" },
+    { value: "cancelled", label: "Cancelled", dot: "bg-[#EF4444]" },
+];
+
+export default function FormHeader({ appointments }: FormHeaderProps) {
     const [date, setDate] = useState<Date>();
-    const [patient, setPatient] = useState("");
-    const [location, setLocation] = useState("");
-    const [practitioner, setPractitioner] = useState("");
-    const [designation, setDesignation] = useState("");
-    const [status, setStatus] = useState("");
-    const [showErrors, setShowErrors] = useState(false);
+    const [status, setStatus] = useState<string>("all");
+    const [calendarOpen, setCalendarOpen] = useState(false);
 
-    const [records, setRecords] = useState<any[]>([]);
+    const filtered = appointments.filter((apt) => {
+        const matchDate = date
+            ? new Date(apt.startTime).toDateString() === date.toDateString()
+            : true;
+        const matchStatus = status !== "all" ? apt.status === status : true;
+        return matchDate && matchStatus;
+    });
 
-    // res
-    useEffect(() => {
-        const saved = localStorage.getItem("medical_records");
-        if (saved) setRecords(JSON.parse(saved));
-    }, []);
-
-    // save data
-    useEffect(() => {
-        if (records.length > 0 || localStorage.getItem("medical_records")) {
-            localStorage.setItem("medical_records", JSON.stringify(records));
-        }
-    }, [records]);
-
-    const handleAddRecord = () => {
-        if (!date || !patient || !location || !practitioner || !designation || !status) {
-            setShowErrors(true);
-            toast.error("Please fill all fields!");
-            return;
-        }
-
-        const newRecord = {
-            id: Date.now(),
-            date: format(date, "dd/MM/yyyy"),
-            patient,
-            location,
-            practitioner,
-            designation,
-            status
-        };
-
-        setRecords([...records, newRecord]);
-
-        // Clear data after adding
+    const handleReset = () => {
         setDate(undefined);
-        setPatient("");
-        setLocation("");
-        setPractitioner("");
-        setDesignation("");
-        setStatus("");
-        setShowErrors(false);
+        setStatus("all");
     };
 
     return (
-        <>
-            <div className="w-full flex flex-col items-center p-4 gap-6">
-                <div className="max-w-279 w-full min-h-56.5 bg-white border border-[#E7E8EB] rounded-[6px] p-6 shadow-sm flex flex-col gap-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-6">
-                        {/* Date */}
-                        <div className="flex flex-col gap-1.5 w-full">
-                            <label className="text-[14px] font-medium text-[#0A1B39] font-['Inter']">Date</label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className={cn(
-                                            "w-full h-9 justify-between text-left font-normal border-[#E7E8EB] px-3 rounded-[6px] shadow-none",
-                                            !date ? "text-[#9DA4B0]" : "text-[#0A1B39]",
-                                            !date && showErrors && "border-red-500 bg-red-50 ring-1 ring-red-500"
-                                        )}
-                                    >
-                                        <span className="truncate">{date ? format(date, "dd/MM/yyyy") : "dd/mm/yyyy"}</span>
-                                        <CalendarIcon className="h-3.5 w-3.5 shrink-0 text-[#0A1B39]" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
+        <div className="w-full flex flex-col gap-6 mt-6">
 
-                        {/* Patient */}
-                        <div className="flex flex-col gap-1.5 w-full">
-                            <label className="text-[14px] font-medium text-[#0A1B39]">Patient</label>
-                            <Select value={patient} onValueChange={setPatient}>
-                                <SelectTrigger className={cn(
-                                    "w-full h-9 border-[#E7E8EB] text-[#9DA4B0] px-3 rounded-[6px] shadow-none focus:ring-1 focus:ring-[#0A1B39]",
-                                    !patient && showErrors && "border-red-500 bg-red-50 ring-1 ring-red-500"
-                                )}>
-                                    <SelectValue placeholder="Select" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Alberto Ripley">Alberto Ripley</SelectItem>
-                                    <SelectItem value="Susan Babin">Susan Babin</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+            <div className="flex flex-wrap items-center gap-3">
 
-                        {/* Location */}
-                        <div className="flex flex-col gap-1.5 w-full">
-                            <label className="text-[14px] font-medium text-[#0A1B39] whitespace-nowrap">Location</label>
-                            <Select value={location} onValueChange={setLocation}>
-                                <SelectTrigger className={cn(
-                                    "w-full h-9 border-[#E7E8EB] text-[#9DA4B0] px-3 rounded-[6px] shadow-none",
-                                    !location && showErrors && "border-red-500 bg-red-50 ring-1 ring-red-500"
-                                )}>
-                                    <SelectValue placeholder="Select" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Cairo">Cairo</SelectItem>
-                                    <SelectItem value="Giza">Giza</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Practitioner */}
-                        <div className="flex flex-col gap-1.5 w-full">
-                            <label className="text-[14px] font-medium text-[#0A1B39]">Practioner</label>
-                            <Select value={practitioner} onValueChange={setPractitioner}>
-                                <SelectTrigger className={cn(
-                                    "w-full h-9 border-[#E7E8EB] text-[#9DA4B0] px-3 rounded-[6px] shadow-none",
-                                    !practitioner && showErrors && "border-red-500 bg-red-50 ring-1 ring-red-500"
-                                )}>
-                                    <SelectValue placeholder="Select" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Dr. Mick Thompson">Dr. Mick Thompson</SelectItem>
-                                    <SelectItem value="Dr. Sarah Johnson">Dr. Sarah Johnson</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Designation */}
-                        <div className="flex flex-col gap-1.5 w-full">
-                            <label className="text-[14px] font-medium text-[#0A1B39]">Designation</label>
-                            <Select value={designation} onValueChange={setDesignation}>
-                                <SelectTrigger className={cn(
-                                    "w-full h-9 border-[#E7E8EB] text-[#9DA4B0] px-3 rounded-[6px] shadow-none",
-                                    !designation && showErrors && "border-red-500 bg-red-50 ring-1 ring-red-500"
-                                )}>
-                                    <SelectValue placeholder="Select" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="item1">Item 1</SelectItem>
-                                    <SelectItem value="item2">Item 2</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Status */}
-                        <div className="flex flex-col gap-1.5 w-full">
-                            <label className="text-[14px] font-medium text-[#0A1B39]">Status</label>
-                            <Select value={status} onValueChange={setStatus}>
-                                <SelectTrigger className={cn(
-                                    "w-full h-9 border-[#E7E8EB] text-[#9DA4B0] px-3 rounded-[6px] shadow-none",
-                                    !status && showErrors && "border-red-500 bg-red-50 ring-1 ring-red-500"
-                                )}>
-                                    <SelectValue placeholder="Select" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem className="bg-[#E9F8FB] border-[#06AED4] text-[#06AED4]" value="Checked Out">Checked Out</SelectItem>
-                                    <SelectItem value="Checked in">Checked in</SelectItem>
-                                    <SelectItem value="Cancelled">Cancelled</SelectItem>
-                                    <SelectItem value="Schedule">Schedule</SelectItem>
-                                    <SelectItem value="Confirmed">Confirmed</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <div className="flex justify-end">
-                        <Button onClick={handleAddRecord} className="bg-[#030303] text-white gap-2">
-                            <Plus className="w-4 h-4" /> Add Record
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            className={cn(
+                                "h-10 px-4 rounded-xl border-[#E7EBF3] text-sm font-medium gap-2",
+                                date ? "text-[#0A1B39]" : "text-[#9DA4B0]"
+                            )}
+                        >
+                            <CalendarIcon size={15} />
+                            {date ? format(date, "dd MMM yyyy") : "Pick a date"}
                         </Button>
-                    </div>
-                </div>
-                <div className="max-w-279 w-full">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Patient</TableHead>
-                                <TableHead>Location</TableHead>
-                                <TableHead>Practitioner</TableHead>
-                                <TableHead>Designation</TableHead>
-                                <TableHead>Status</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {records.map((rec) => (
-                                <TableRow key={rec.id}>
-                                    <TableCell>{rec.date}</TableCell>
-                                    <TableCell>{rec.patient}</TableCell>
-                                    <TableCell>{rec.location}</TableCell>
-                                    <TableCell>{rec.practitioner}</TableCell>
-                                    <TableCell>{rec.designation}</TableCell>
-                                    <TableCell>{rec.status}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 rounded-2xl border-[#E7EBF3] shadow-xl">
+                        <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={(d) => {
+                                setDate(d);
+                                setCalendarOpen(false);
+                            }}
+                            initialFocus
+                        />
+                    </PopoverContent>
+                </Popover>
+
+                {/* Status Filter */}
+                <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger className="h-10 w-44 rounded-xl border-[#E7EBF3] text-sm font-medium text-[#0A1B39]">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-[#E7EBF3] shadow-xl">
+                        {statusOptions.map((s) => (
+                            <SelectItem key={s.value} value={s.value} className="rounded-lg py-2">
+                                <div className="flex items-center gap-2">
+                                    <span className={cn("w-2 h-2 rounded-full", s.dot)} />
+                                    {s.label}
+                                </div>
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                {(date || status !== "all") && (
+                    <Button
+                        variant="ghost"
+                        onClick={handleReset}
+                        className="h-10 px-4 rounded-xl text-[#EF4444] hover:bg-[#FEE2E2] text-sm font-medium"
+                    >
+                        Reset
+                    </Button>
+                )}
+                <span className="ml-auto text-[13px] text-[#9DA4B0] font-medium">
+                    {filtered.length} record{filtered.length !== 1 ? "s" : ""} found
+                </span>
             </div>
-        </>
+
+            {/* Table */}
+            <div className="w-full bg-white border border-[#E7E8EB] rounded-[8px] overflow-hidden shadow-sm">
+                <Table>
+                    <TableHeader className="bg-[#F8F9FB]">
+                        <TableRow className="border-b border-[#E7E8EB] hover:bg-transparent">
+                            <TableHead className="text-[#6C7688] font-bold text-[12px] uppercase p-4">Date & Time</TableHead>
+                            <TableHead className="text-[#6C7688] font-bold text-[12px] uppercase p-4">Patient Name</TableHead>
+                            <TableHead className="text-[#6C7688] font-bold text-[12px] uppercase p-4">Practitioner</TableHead>
+                            <TableHead className="text-[#6C7688] font-bold text-[12px] uppercase p-4">Status</TableHead>
+                            <TableHead className="text-[#6C7688] font-bold text-[12px] uppercase p-4">Amount</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filtered.length > 0 ? (
+                            filtered.map((apt) => (
+                                <TableRow key={apt._id} className="border-b border-[#E7E8EB] hover:bg-[#F8F9FC] transition-colors">
+                                    <TableCell className="p-4">
+                                        <div className="text-[#0A1B39] font-medium">
+                                            {format(new Date(apt.startTime), "dd MMM yyyy")}
+                                        </div>
+                                        <div className="text-[11px] text-[#9DA4B0]">
+                                            {format(new Date(apt.startTime), "hh:mm a")}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="p-4 text-[#0A1B39] font-semibold">
+                                        {apt.patient?.displayName ?? "N/A"}
+                                    </TableCell>
+                                    <TableCell className="p-4 text-[#0A1B39] text-[13px]">
+                                        {apt.doctor?.displayName ?? "N/A"}
+                                    </TableCell>
+                                    <TableCell className="p-4">
+                                        <span className={cn(
+                                            "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                                            statusStyles[apt.status]
+                                        )}>
+                                            {apt.status}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="p-4 text-[#0A1B39] font-bold">
+                                        ${apt.price}
+                                    </TableCell>
+                                    <TableCell className="p-4">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-[#9DA4B0] hover:text-[#0A1B39]">
+                                            <MoreVertical size={16} />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-32 text-center text-[#9DA4B0]">
+                                    No records found for the selected filters.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+        </div>
     );
 }
+
 
 
 

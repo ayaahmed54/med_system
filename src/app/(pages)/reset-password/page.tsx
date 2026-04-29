@@ -1,117 +1,125 @@
-"use client"
+"use client";
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { toast } from "sonner";
+import { useRouter, useSearchParams } from "next/navigation";
+
+import { resetPasswordSchema } from "@/schema/resetPasswordSchema";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
     Form,
     FormControl,
     FormField,
     FormItem,
     FormLabel,
-    FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { resetPasswordSchema } from "@/schema/resetPasswordSchema"
-import { useState } from "react"
-import { Eye, EyeOff, Lock } from "lucide-react"
-export default function ResetPassword() {
-    const router = useRouter()
+    FormMessage
+} from "@/components/ui/form";
+
+export default function ResetPasswordPage() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const token = searchParams.get("token");
+
     const form = useForm<z.infer<typeof resetPasswordSchema>>({
         resolver: zodResolver(resetPasswordSchema),
         defaultValues: {
             password: "",
-            confirmPassword: ""
+            passwordConfirm: ""
         },
     });
 
-    function onSubmit(values: z.infer<typeof resetPasswordSchema>) {
-        console.log("New Password:", values.password)
-        router.push("/login")
+    const { isSubmitting } = form.formState;
+
+    async function onSubmit(values: z.infer<typeof resetPasswordSchema>) {
+        try {
+            if (!token) {
+                toast.error("Missing reset token");
+                return;
+            }
+
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_URL_API}/user/resetPassword/${token}`,
+                {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        password: values.password,
+                        passwordConfirm: values.passwordConfirm,
+                    }),
+                }
+            );
+
+            const data = await response.json();
+
+            if (response.ok) {
+                toast.success("Password reset successfully 🔥");
+                router.push("/login");
+            } else {
+                toast.error(data.message || "Invalid or expired token");
+            }
+        } catch (error) {
+            toast.error("Something went wrong");
+        }
     }
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-10">
-            <div className="w-md bg-white p-10 border border-[#E7E8EB] rounded-4xl shadow-[0px_1px_1px_rgba(0,0,0,0.05)] flex flex-col items-start">
-                <div className="w-full flex flex-col gap-1 mb-7.5">
-                    <h1 className="text-[20px] font-bold text-[#0A1B39] leading-6 text-center w-full">
-                        Reset Password
-                    </h1>
-                    <p className="text-[14px] text-[#6C7688] opacity-70 leading-5.25 text-center w-full">
-                        Your new password must be different from previous used passwords.
-                    </p>
-                </div>
+        <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+            <div className="w-full max-w-md bg-white p-8 rounded-[24px] shadow-sm border border-gray-100">
+
+                <h1 className="text-2xl font-bold text-center mb-2">
+                    New Password
+                </h1>
+
+                <p className="text-sm text-gray-500 text-center mb-8">
+                    Enter your new password
+                </p>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="w-full flex flex-col gap-5" noValidate>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+
                         <FormField
                             control={form.control}
                             name="password"
                             render={({ field }) => (
-                                <FormItem className="space-y-1 w-full">
-
-                                    <FormLabel className="text-[14px] font-medium text-[#0A1B39] leading-5.25" >
-
-                                        New Password
-                                    </FormLabel>
+                                <FormItem>
+                                    <FormLabel>New Password</FormLabel>
                                     <FormControl>
-                                        <div className="relative flex items-center">
-
-                                            <Input
-                                                type="password"
-                                                placeholder="************"
-                                                className="h-9 rounded-[6px] border-[#E7E8EB] px-3 py-1.5 text-[14px] shadow-[0px_1px_1px_rgba(0,0,0,0.05)] ]"
-                                                {...field}
-                                            />
-                                        </div>
+                                        <Input type="password" {...field} />
                                     </FormControl>
-                                    <FormMessage className="text-[11px]" />
+                                    <FormMessage />
                                 </FormItem>
                             )}
                         />
+
                         <FormField
                             control={form.control}
-                            name="confirmPassword"
+                            name="passwordConfirm"
                             render={({ field }) => (
-                                <FormItem className="space-y-1 w-full">
-                                    <FormLabel className="text-[14px] font-medium text-[#0A1B39] leading-5.25]">
-                                        Confirm Password
-                                    </FormLabel>
+                                <FormItem>
+                                    <FormLabel>Confirm Password</FormLabel>
                                     <FormControl>
-                                        <Input
-                                            type="password"
-                                            placeholder="************"
-                                            className="h-9 rounded-[6px] border-[#E7E8EB] px-3 py-1.5 text-[14px] shadow-[0px_1px_1px_rgba(0,0,0,0.05)] ]"
-                                            {...field}
-                                        />
+                                        <Input type="password" {...field} />
                                     </FormControl>
-                                    <FormMessage className="text-[11px]" />
+                                    <FormMessage />
                                 </FormItem>
                             )}
                         />
+
                         <Button
                             type="submit"
-                            className="w-full h-10 bg-[#2E37A4] hover:bg-[#232a7d] text-white rounded-[6px] text-[14px] font-semibold mt-2.5 transition-all"
+                            disabled={isSubmitting}
+                            className="w-full"
                         >
-                            Reset Password
+                            {isSubmitting ? "Updating..." : "Reset Password"}
                         </Button>
 
-                        <div className="flex justify-center w-full">
-                            <button
-                                type="button"
-                                onClick={() => router.push("/login")}
-                                className="text-[14px] text-[#6C7688] font-normal hover:text-[#0A1B39] transition-colors"
-                            >
-                                Back to Login
-                            </button>
-                        </div>
                     </form>
                 </Form>
             </div>
         </div>
-
-    )
+    );
 }
+
