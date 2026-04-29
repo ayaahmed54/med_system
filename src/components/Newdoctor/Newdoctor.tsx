@@ -1,23 +1,45 @@
+
 "use client";
 
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { toast } from "sonner";
 import { X } from "lucide-react";
 
-import { doctorSchema, DoctorFormValues } from "@/schema/doctorSchema";
+
+const doctorSchema = z.object({
+    name: z.string().min(2, "Name is too short"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    passwordConfirm: z.string(),
+    phone: z.string().min(10, "Phone number is too short"),
+    specialty: z.string().min(1, "Specialty is required"),
+    yearsOfExperience: z.coerce.number().min(0),
+    price: z.coerce.number().min(0),
+    schedule: z.array(z.string()).min(1, "Select at least one day"),
+    workingHours: z.object({
+        start: z.string(),
+        end: z.string(),
+    }),
+    dateOfBirth: z.string().min(1, "Date of birth is required"),
+    address: z.object({
+        street: z.string().min(1, "Street is required"),
+        city: z.string().min(1, "City is required"),
+        country: z.string().min(1, "Country is required"),
+    }),
+    gender: z.enum(["male", "female"]),
+    description: z.string().optional(),
+}).refine((data) => data.password === data.passwordConfirm, {
+    message: "Passwords do not match",
+    path: ["passwordConfirm"],
+});
+
+type DoctorFormValues = z.infer<typeof doctorSchema>;
+
 import { CreateDoctor } from "../Adddocaction/adddocaction";
-
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-    DialogClose,
-} from "@/components/ui/dialog";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { Button } from "../ui/button";
 
 const FormField = ({ label, children, error }: any) => (
@@ -35,7 +57,7 @@ export default function AddDoctorModal() {
         reset,
         formState: { errors, isSubmitting },
     } = useForm<DoctorFormValues>({
-        resolver: zodResolver(doctorSchema),
+        resolver: zodResolver(doctorSchema) as any,
         defaultValues: {
             name: "",
             email: "",
@@ -56,16 +78,10 @@ export default function AddDoctorModal() {
 
     const onSubmit = async (data: DoctorFormValues) => {
         try {
-            console.log("🔥 Submitting:", data);
-            const res = await CreateDoctor({
-                ...data,
-                displayName: data.name,
-            });
-
+            const res = await CreateDoctor({ ...data, displayName: data.name });
             toast.success("Doctor created successfully! ✨");
             reset();
         } catch (error: any) {
-            console.error("❌ Error:", error);
             toast.error(error.message || "Failed to create doctor");
         }
     };
