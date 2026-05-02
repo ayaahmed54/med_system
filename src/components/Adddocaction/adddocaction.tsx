@@ -8,12 +8,9 @@ export async function CreateDoctor(formData: any) {
         const session = await getServerSession(authOptions);
         const token = session?.token;
 
-        console.log("🔐 SESSION:", session);
-        console.log("🔑 TOKEN:", token);
 
         if (!token) throw new Error("Unauthorized");
 
-        console.log("📤 SENDING TO API:", formData);
 
         const response = await fetch(
             `${process.env.NEXT_PUBLIC_URL_API}/doctors/createDoctor`,
@@ -32,13 +29,13 @@ export async function CreateDoctor(formData: any) {
         console.log("📥 API RESPONSE:", data);
 
         if (!response.ok) {
-            console.error("❌ API ERROR:", data);
+            console.error(" API ERROR:", data);
             throw new Error(data.message || "Failed to create doctor");
         }
 
         return data;
     } catch (error) {
-        console.error("💥 SERVER ACTION ERROR:", error);
+        console.error(" SERVER ACTION ERROR:", error);
         throw error;
     }
 }

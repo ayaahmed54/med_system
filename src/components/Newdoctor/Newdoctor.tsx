@@ -103,16 +103,15 @@ export default function AddDoctorModal() {
                         <p className="text-blue-100 text-sm">Create a new professional profile</p>
                     </DialogHeader>
                     <DialogClose className="absolute right-4 top-4 text-white/70 hover:text-white transition-colors">
-                        <X className="h-6 w-6" />
+
                     </DialogClose>
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-5 max-h-[75vh] overflow-y-auto bg-white">
 
-                    {/* Basic Info */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField label="Full Name" error={errors.name?.message}>
-                            <input {...register("name")} placeholder="Dr. Adham Ziad" className={inputClass} />
+                            <input {...register("name")} placeholder="Dr.example " className={inputClass} />
                         </FormField>
                         <FormField label="Email Address" error={errors.email?.message}>
                             <input {...register("email")} type="email" placeholder="example@clinic.com" className={inputClass} />
@@ -128,7 +127,6 @@ export default function AddDoctorModal() {
                         </FormField>
                     </div>
 
-                    {/* Professional Details */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <FormField label="Phone" error={errors.phone?.message}>
                             <input {...register("phone")} placeholder="01xxxxxxxxx" className={inputClass} />
@@ -141,7 +139,6 @@ export default function AddDoctorModal() {
                         </FormField>
                     </div>
 
-                    {/* Birth & Address */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField label="Date of Birth" error={errors.dateOfBirth?.message}>
                             <input {...register("dateOfBirth")} type="date" className={inputClass} />
@@ -155,7 +152,6 @@ export default function AddDoctorModal() {
                         <textarea {...register("description")} rows={3} placeholder="Tell us about the doctor..." className={`${inputClass} resize-none`} />
                     </FormField>
 
-                    {/* Footer Buttons */}
                     <div className="flex gap-4 pt-4 border-t border-gray-100">
                         <DialogClose asChild>
                             <Button type="button" variant="outline" className="flex-1 h-12 rounded-xl border-gray-200 text-gray-500 font-semibold hover:bg-gray-50">
